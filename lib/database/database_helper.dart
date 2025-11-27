@@ -50,6 +50,18 @@ class DatabaseHelper {
     return await db.insert('videojuegos', videojuego.toMap());
   }
 
+  // ============ READ - Obtener todos los videojuegos ============
+  Future<List<Videojuego>> getAllVideojuegos() async {
+    Database db = await database;
+    // query devuelve una lista de Maps
+    List<Map<String, dynamic>> maps = await db.query('videojuegos');
+    
+    // Convertir cada Map en un objeto Videojuego
+    return List.generate(maps.length, (i) {
+      return Videojuego.fromMap(maps[i]);
+    });
+  }
+
   // Cerrar la base de datos
   Future<void> close() async {
     Database db = await database;
