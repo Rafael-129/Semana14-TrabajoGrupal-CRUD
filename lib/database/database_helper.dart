@@ -62,6 +62,18 @@ class DatabaseHelper {
     });
   }
 
+  // ============ UPDATE - Actualizar un videojuego ============
+  Future<int> updateVideojuego(Videojuego videojuego) async {
+    Database db = await database;
+    // update devuelve el número de filas afectadas
+    return await db.update(
+      'videojuegos',
+      videojuego.toMap(),
+      where: 'id = ?', // Condición: buscar por ID
+      whereArgs: [videojuego.id], // El ID del videojuego a actualizar
+    );
+  }
+
   // Cerrar la base de datos
   Future<void> close() async {
     Database db = await database;

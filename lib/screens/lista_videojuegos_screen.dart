@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/videojuego.dart';
 import '../database/database_helper.dart';
 import 'agregar_videojuego_screen.dart';
+import 'editar_videojuego_screen.dart';
 
 class ListaVideojuegosScreen extends StatefulWidget {
   const ListaVideojuegosScreen({super.key});
@@ -194,6 +195,19 @@ class _ListaVideojuegosScreenState extends State<ListaVideojuegosScreen> {
                                 : Colors.grey.shade400,
                             size: 28,
                           ),
+                          // Al hacer tap, abrir pantalla de edición
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditarVideojuegoScreen(
+                                  videojuego: juego,
+                                ),
+                              ),
+                            );
+                            // Recargar la lista cuando volvemos
+                            _cargarVideojuegos();
+                          },
                         ),
                       );
                     },
