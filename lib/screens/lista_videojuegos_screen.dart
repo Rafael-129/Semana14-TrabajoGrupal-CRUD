@@ -36,6 +36,63 @@ class _ListaVideojuegosScreenState extends State<ListaVideojuegosScreen> {
     });
   }
 
+  // Función para eliminar un videojuego
+  Future<void> _eliminarVideojuego(Videojuego juego) async {
+    // Mostrar diálogo de confirmación
+    bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('¿Eliminar videojuego?'),
+          content: Text('¿Estás seguro de eliminar "${juego.titulo}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Si confirmó, eliminar
+    if (confirmar == true) {
+      int result = await _dbHelper.deleteVideojuego(juego.id!);
+      
+      if (result > 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('"${juego.titulo}" eliminado'),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'Deshacer',
+                textColor: Colors.white,
+                onPressed: () async {
+                  // Reinsertarlo sin ID para que se genere uno nuevo
+                  Videojuego juegoRestaurado = Videojuego(
+                    titulo: juego.titulo,
+                    plataforma: juego.plataforma,
+                    genero: juego.genero,
+                    completado: juego.completado,
+                  );
+                  await _dbHelper.insertVideojuego(juegoRestaurado);
+                  _cargarVideojuegos();
+                },
+              ),
+            ),
+          );
+        }
+        _cargarVideojuegos();
+      }
+    }
+  }
+
   // Función para obtener el icono según la plataforma
   IconData _getPlatformIcon(String plataforma) {
     if (plataforma.contains('PlayStation')) return Icons.sports_esports;
@@ -123,19 +180,91 @@ class _ListaVideojuegosScreenState extends State<ListaVideojuegosScreen> {
                     itemCount: _videojuegos.length,
                     itemBuilder: (context, index) {
                       Videojuego juego = _videojuegos[index];
-                      return Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
+                      return Dismissible(
+                        key: Key(juego.id.toString()),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                            size: 32,
+                          ),
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(12),
-                          // Icono de plataforma
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.deepPurple.shade100,
-                            child: Icon(
-                              _getPlatformIcon(juego.plataforma),
+                        confirmDismiss: (direction) async {
+                          // Mostrar confirmación antes de eliminar
+                          return await showDialog<bool>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('¿Eliminar videojuego?'),
+                                content: Text('¿Estás seguro de eliminar "${juego.titulo}"?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(true),
+                                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                    child: const Text('Eliminar'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        onDismissed: (direction) async {
+                          // Eliminar de la base de datos
+                          await _dbHelper.deleteVideojuego(juego.id!);
+                          
+                          // Mostrar snackbar con opción de deshacer
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('"${juego.titulo}" eliminado'),
+                                backgroundColor: Colors.red,
+                                action: SnackBarAction(
+                                  label: 'Deshacer',
+                                  textColor: Colors.white,
+                                  onPressed: () async {
+                                    // Reinsertarlo
+                                    Videojuego juegoRestaurado = Videojuego(
+                                      titulo: juego.titulo,
+                                      plataforma: juego.plataforma,
+                                      genero: juego.genero,
+                                      completado: juego.completado,
+                                    );
+                                    await _dbHelper.insertVideojuego(juegoRestaurado);
+                                    _cargarVideojuegos();
+                                  },
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: Card(
+                          elevation: 3,
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+                            // Icono de plataforma
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.deepPurple.shade100,
+                              child: Icon(
+                                _getPlatformIcon(juego.plataforma),
                               color: Colors.deepPurple,
                             ),
                           ),
@@ -208,6 +337,7 @@ class _ListaVideojuegosScreenState extends State<ListaVideojuegosScreen> {
                             // Recargar la lista cuando volvemos
                             _cargarVideojuegos();
                           },
+                        ),
                         ),
                       );
                     },

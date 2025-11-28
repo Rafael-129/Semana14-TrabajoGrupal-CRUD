@@ -74,6 +74,17 @@ class DatabaseHelper {
     );
   }
 
+  // ============ DELETE - Eliminar un videojuego ============
+  Future<int> deleteVideojuego(int id) async {
+    Database db = await database;
+    // delete devuelve el número de filas eliminadas
+    return await db.delete(
+      'videojuegos',
+      where: 'id = ?', // Condición: buscar por ID
+      whereArgs: [id], // El ID del videojuego a eliminar
+    );
+  }
+
   // Cerrar la base de datos
   Future<void> close() async {
     Database db = await database;
